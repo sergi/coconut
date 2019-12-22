@@ -1,0 +1,2 @@
+# COCONUT Config
+template: "{{.Time | year}}/{{.Time | year}}-{{.Time | month}}/{{.Geo}}"
