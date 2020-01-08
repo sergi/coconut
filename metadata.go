@@ -16,7 +16,7 @@ type MetaData struct {
 	Location     string
 }
 
-func NewMetaData(f *os.File, meta *, loc *Locator) (MetaData, error) {
+func NewMetaData(f *os.File, meta *FilePath, loc *Locator) (MetaData, error) {
 	var exifRaw io.Reader
 	if meta.ext == ".heic" {
 		h := heif.Open(f)
@@ -42,7 +42,6 @@ func NewMetaData(f *os.File, meta *, loc *Locator) (MetaData, error) {
 	return MetaData{
 		time, location,
 	}, nil
-
 }
 
 func getCreationDate(f *os.File, x *exif.Exif) time.Time {
