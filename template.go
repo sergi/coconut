@@ -18,7 +18,7 @@ func getDay(t time.Time) string {
 	return strconv.Itoa(t.Day())
 }
 
-func ExecuteConfigTemplate(data *Result, pathTemplate string) (string, error) {
+func ExecuteConfigTemplate(data Result, pathTemplate string) (string, error) {
 	funcMap := template.FuncMap{
 		"day":   getDay,
 		"month": getMonth,

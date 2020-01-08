@@ -24,8 +24,6 @@ func main() {
 	config := ct.Config{}
 
 	flag.StringVar(&config.Destination, "destination", "", "Destination Folder")
-	// flag.StringVar(&Config.DB.Name, "db-name", "", "database name")
-	// flag.StringVar(&Config.DB.User, "db-user", "root", "database user")
 	flag.Parse()
 
 	configor.Load(&config, "config.yml")
@@ -34,15 +32,13 @@ func main() {
 
 	start := time.Now()
 	l := ct.CreateLocatorFromCSV(loadGeoCodes())
-	// path := os.Args[1]
 	p := ct.New(flag.Args(), l, &config)
-	// fmt.Println(time.Since(start))
 
 	m := p.Start()
 
 	var paths []string
-	for path := range m {
-		paths = append(paths, path)
+	for p := range m {
+		paths = append(paths, p)
 	}
 	sort.Strings(paths)
 	for _, path := range paths {
@@ -52,7 +48,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(finalPath)
+		fmt.Println("finalPath", finalPath)
 	}
 
 	fmt.Printf("%d files processed.\n", p.ProcessedFiles())

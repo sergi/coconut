@@ -29,7 +29,7 @@ type FilePath struct {
 	ext  string
 }
 
-// A result is the product of processing a file
+// Result is the product of processing a file
 type Result struct {
 	Path     string
 	Time     time.Time
@@ -58,16 +58,41 @@ func New(folders []string, l *Locator, c *Config) Processor {
 	return Processor{c, folders, cache.New(0, 0), l}
 }
 
-// walkFiles starts a goroutine to walk the directory tree at root and send the
-// path of each regular file on the string channel.  It sends the result of the
-// walk on the error channel.  If done is closed, walkFiles abandons its work.
-func (p Processor) walkFiles(done <-chan struct{}, folders []string) (<-chan FilePath, <-chan error) {
+func (p Processor) VisitFolders(folders []string, done <-chan struct{}) (<-chan FilePath, <-chan error) {
 	files := make(chan FilePath)
 	errc := make(chan error, len(folders))
 
-	visit := func(path string, de *godirwalk.Dirent) error {
+	var wg sync.WaitGroup
+	wg.Add(len(folders))
+
+	walk := func(f string) {
+		defer wg.Done()
+		// No select needed for this send, since errc is buffered.
+		errc <- godirwalk.Walk(f, &godirwalk.Options{
+			Callback: p.getVisitorFunc(files, done),
+			Unsorted: true,
+		})
+	}
+
+	for _, folder := range folders {
+		go walk(folder)
+	}
+
+	go func() {
+		wg.Wait()
+		close(files)
+	}()
+
+	return files, errc
+}
+
+func (p Processor) getVisitorFunc(files chan FilePath, done <-chan struct{}) func(string, *godirwalk.Dirent) error {
+	return func(path string, de *godirwalk.Dirent) error {
 		ext := strings.ToLower(filepath.Ext(path))
-		if !de.IsRegular() || !allowedExtensions[ext] {
+		if !de.IsRegular() {
+			return nil
+		}
+		if _, ok := FileExtensions[ext]; !ok {
 			return nil
 		}
 		p.DB.IncrementInt("processedFiles", 1)
@@ -79,26 +104,6 @@ func (p Processor) walkFiles(done <-chan struct{}, folders []string) (<-chan Fil
 		}
 		return nil
 	}
-
-	var wg sync.WaitGroup
-	wg.Add(len(folders))
-	for _, folder := range folders {
-		go func(f string) {
-			defer wg.Done()
-			// No select needed for this send, since errc is buffered.
-			errc <- godirwalk.Walk(f, &godirwalk.Options{
-				Callback: visit,
-				Unsorted: true,
-			})
-		}(folder)
-	}
-
-	go func() {
-		wg.Wait()
-		close(files)
-	}()
-
-	return files, errc
 }
 
 func closeFile(f *os.File) {
@@ -162,13 +167,13 @@ func (p Processor) process(done <-chan struct{}, files <-chan FilePath, c chan<-
 // from file path to the MD5 sum of the file's contents.  If the directory walk
 // fails or any read operation fails, ProcessAll returns an error.  In that case,
 // ProcessAll does not wait for inflight read operations to complete.
-func (p Processor) ProcessAll(folders []string, loc *Locator) (map[string]*Result, error) {
-	// MD5All closes the done channel when it returns; it may do so before
+func (p Processor) ProcessAll(folders []string, loc *Locator) (map[string]Result, error) {
+	// ProcessAll closes the done channel when it returns; it may do so before
 	// receiving all the values from c and errc.
 	done := make(chan struct{})
 	defer close(done)
 
-	paths, errc := p.walkFiles(done, folders)
+	paths, errc := p.VisitFolders(folders, done)
 
 	results := make(chan Result)
 	var wg sync.WaitGroup
@@ -185,17 +190,19 @@ func (p Processor) ProcessAll(folders []string, loc *Locator) (map[string]*Resul
 	}()
 	// End of pipeline. OMIT
 
-	m := make(map[string]*Result)
-	for r := range results {
-		if r.err != nil {
-			return nil, r.err
+	m := make(map[string]Result)
+	for result := range results {
+		if result.err != nil {
+			return nil, result.err
 		}
-		m[r.Path] = &r
+
+		m[result.Path] = result
 	}
 
 	if err := <-errc; err != nil {
 		return nil, err
 	}
+
 	return m, nil
 }
 
@@ -217,7 +224,8 @@ func (p Processor) DuplicateFiles() int {
 	return v.(int)
 }
 
-func (p Processor) Start() map[string]*Result {
+// Start here
+func (p Processor) Start() map[string]Result {
 	p.Reset()
 	p.DB.Set("processedFiles", 0, 0)
 	p.DB.Set("duplicateFiles", 0, 0)
