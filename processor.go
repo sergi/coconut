@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/karrick/godirwalk"
 	"github.com/patrickmn/go-cache"
 )
@@ -137,7 +138,7 @@ func (p Processor) process(done <-chan struct{}, files <-chan FilePath, c chan<-
 		duplicate, alreadyProcessed := p.DB.Get(checksum)
 		if alreadyProcessed {
 			p.DB.IncrementInt("duplicateFiles", 1)
-			fmt.Printf("Duplicated file: %s is the same file as %s\n", path, duplicate)
+			color.Yellow("Duplicated file\n - %s\n - %s", path, duplicate)
 			return
 		}
 

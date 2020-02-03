@@ -1,9 +1,10 @@
-module sergimansilla.com/coconut
+module github.com/sergi/coconut
 
 go 1.13
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/fatih/color v1.9.0
 	github.com/jinzhu/configor v1.1.1
 	github.com/jupp0r/go-priority-queue v0.0.0-20160601094913-ab1073853bde // indirect
 	github.com/karrick/godirwalk v1.13.4
