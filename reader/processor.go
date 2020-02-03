@@ -1,4 +1,4 @@
-package coconut
+package reader
 
 import (
 	"crypto/sha256"

@@ -1,4 +1,4 @@
-package coconut
+package reader
 
 import (
 	"bytes"
@@ -22,7 +22,8 @@ func ExecuteConfigTemplate(data Result, pathTemplate string) (string, error) {
 	funcMap := template.FuncMap{
 		"day":   getDay,
 		"month": getMonth,
-		"year":  getYear,
+		// "monthName": getMonthName,
+		"year": getYear,
 	}
 
 	tpl, err := template.New("config").Funcs(funcMap).Parse(pathTemplate)

@@ -11,7 +11,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/jinzhu/configor"
-	ct "github.com/sergi/coconut"
+	ct "github.com/sergi/coconut/reader"
 )
 
 func loadGeoCodes() *os.File {

@@ -1,4 +1,4 @@
-package coconut
+package reader
 
 const (
 	// FileTypeOther is an unkown file format.
