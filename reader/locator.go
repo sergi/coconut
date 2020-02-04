@@ -67,6 +67,26 @@ func CreateLocatorFromCSV(csvReader io.Reader) *Locator {
 		str.Reset()
 	}
 
+	fmt.Printf("%s", tree.String())
+
+	return &Locator{nameList, tree}
+}
+
+func CreateLocatorFromGeoDB() *Locator {
+	position := 0
+	tree := kdtree.New([]kdtree.Point{})
+	nameList := []string{}
+	var str strings.Builder
+	for _, record := range GetGeoDB() {
+		lat := record.Latitude
+		lng := record.Longitude
+		tree.Insert(&LatLng{X: lat, Y: lng, ID: position})
+		fmt.Fprintf(&str, "%s-%s", record.Country, record.Area)
+		nameList = append(nameList, str.String())
+		position++
+		str.Reset()
+	}
+
 	return &Locator{nameList, tree}
 }
 

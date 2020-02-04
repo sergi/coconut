@@ -35,7 +35,7 @@ func main() {
 	flag.Parse()
 
 	start := time.Now()
-	l := ct.CreateLocatorFromCSV(loadGeoCodes())
+	l := ct.CreateLocatorFromGeoDB()
 	p := ct.New(flag.Args(), l, &config)
 
 	m := p.Start()
